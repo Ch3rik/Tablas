@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Multiplicaciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            text-align: center;
+            background-color: #58CC02;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #game-container {
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            background: #fff;
+            color: #333;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #FFDC00;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 50px;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #FFD700;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 2px solid #58CC02;
+            font-size: 16px;
+            text-align: center;
+        }
+        p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Juego de Multiplicaciones</h1>
+    <div id="game-container">
+        <div id="user-input">
+            <p>Ingresa tu nombre:</p>
+            <input type="text" id="player-name">
+            <p>Ingresa tu edad:</p>
+            <input type="number" id="player-age" min="6" max="10">
+            <button onclick="startGame()">Iniciar Juego</button>
+        </div>
+        <div id="game-play" style="display: none;">
+            <h2 id="question"></h2>
+            <input type="number" id="answer">
+            <button onclick="checkAnswer()">Enviar</button>
+            <p>❤️ Vidas: <span id="lives">3</span></p>
+            <p>⭐ Puntuación: <span id="score">0</span></p>
+        </div>
+    </div>
+    <script>
+        let playerName = "";
+        let lives = 3;
+        let score = 0;
+        let correctStreak = 0;
+        let num1, num2;
+
+        function startGame() {
+            playerName = document.getElementById("player-name").value;
+            if (!playerName) {
+                Swal.fire('Por favor ingresa tu nombre');
+                return;
+            }
+            document.getElementById("user-input").style.display = "none";
+            document.getElementById("game-play").style.display = "block";
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            document.getElementById("question").innerText = `¿Cuánto es ${num1} x ${num2}?`;
+        }
+
+        function checkAnswer() {
+            let userAnswer = parseInt(document.getElementById("answer").value);
+            let correctAnswer = num1 * num2;
+
+            if (userAnswer === correctAnswer) {
+                score++;
+                correctStreak++;
+                document.getElementById("score").innerText = score;
+                let messages = [
+                    `¡Genial, ${playerName}! ¡Sigue así!`,
+                    `¡Eres un genio de las multiplicaciones!`,
+                    `¡Superaste un nuevo reto, increíble!`
+                ];
+                Swal.fire(messages[Math.floor(Math.random() * messages.length)]);
+                
+                if (correctStreak % 6 === 0) {
+                    lives++;
+                    document.getElementById("lives").innerText = lives;
+                    Swal.fire({
+                        title: '¡Ganaste una vida!',
+                        text: '¡Sigue practicando!',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+                
+            } else {
+                lives--;
+                correctStreak = 0;
+                document.getElementById("lives").innerText = lives;
+                Swal.fire('Respuesta incorrecta', 'Intenta de nuevo', 'error');
+            }
+            
+            if (lives > 0) {
+                generateQuestion();
+            } else {
+                Swal.fire({
+                    title: '¡Juego terminado!',
+                    text: `Tu puntuación final fue de ${score}.`,
+                    icon: 'info'
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        }
+    </script>
+</body>
+</html>
