@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Multiplicaciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            text-align: center;
+            background-color: #58CC02;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #game-container {
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            background: #fff;
+            color: #333;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+            position: relative;
+        }
+        #avatar {
+            width: 80px;
+            height: 80px;
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        h1 {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #FFDC00;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 50px;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #FFD700;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 2px solid #58CC02;
+            font-size: 16px;
+            text-align: center;
+        }
+        p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Juego de Multiplicaciones</h1>
+    <div id="game-container">
+        <img id="avatar" src="https://cdn-icons-png.flaticon.com/128/3489/3489567.png" alt="Avatar del jugador">
+        <div id="user-input">
+            <p>Ingresa tu nombre:</p>
+            <input type="text" id="player-name">
+            <p>Ingresa tu edad:</p>
+            <input type="number" id="player-age" min="6" max="10">
+            <button onclick="startGame()">Iniciar Juego</button>
+        </div>
+        <div id="game-play" style="display: none;">
+            <h2 id="question"></h2>
+            <input type="number" id="answer">
+            <button onclick="checkAnswer()">Enviar</button>
+            <p>❤️ Vidas: <span id="lives">3</span></p>
+            <p>⭐ Puntuación: <span id="score">0</span></p>
+        </div>
+    </div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROJECT_ID",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_ID",
+            appId: "TU_APP_ID"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let playerName = "";
+        let lives = 3;
+        let score = 0;
+        let correctStreak = 0;
+        let num1, num2;
+
+        function startGame() {
+            playerName = document.getElementById("player-name").value;
+            let playerAge = document.getElementById("player-age").value;
+            
+            if (!playerName || !playerAge) {
+                Swal.fire('Por favor ingresa tu nombre y edad');
+                return;
+            }
+
+            db.collection("players").doc(playerName).set({
+                name: playerName,
+                age: playerAge,
+                score: 0,
+                lives: 3
+            });
+
+            document.getElementById("user-input").style.display = "none";
+            document.getElementById("game-play").style.display = "block";
+            generateQuestion();
+        }
+
+        function checkAnswer() {
+            let userAnswer = parseInt(document.getElementById("answer").value);
+            let correctAnswer = num1 * num2;
+
+            if (userAnswer === correctAnswer) {
+                score++;
+                correctStreak++;
+                document.getElementById("score").innerText = score;
+
+                db.collection("players").doc(playerName).update({
+                    score: score
+                });
+
+                if (correctStreak % 6 === 0) {
+                    lives++;
+                    document.getElementById("lives").innerText = lives;
+                    db.collection("players").doc(playerName).update({
+                        lives: lives
+                    });
+                }
+            } else {
+                lives--;
+                correctStreak = 0;
+                document.getElementById("lives").innerText = lives;
+
+                db.collection("players").doc(playerName).update({
+                    lives: lives
+                });
+
+                if (lives <= 0) {
+                    document.getElementById("avatar").src = "https://cdn-icons-png.flaticon.com/128/742/742751.png";
+                    Swal.fire({
+                        title: '¡Juego terminado!',
+                        text: 'Nunca te rindas, sigue practicando.',
+                        icon: 'info'
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            }
+            generateQuestion();
+        }
+    </script>
+</body>
+</html>
