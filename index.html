@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego de Multiplicaciones</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700&display=swap');
         
@@ -29,6 +31,15 @@
             border-radius: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             text-align: center;
+            position: relative;
+        }
+        #avatar {
+            width: 80px;
+            height: 80px;
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
         }
         h1 {
             color: #fff;
@@ -68,6 +79,7 @@
 <body>
     <h1>Juego de Multiplicaciones</h1>
     <div id="game-container">
+        <img id="avatar" src="https://cdn-icons-png.flaticon.com/128/3489/3489567.png" alt="Avatar del jugador">
         <div id="user-input">
             <p>Ingresa tu nombre:</p>
             <input type="text" id="player-name">
@@ -84,6 +96,18 @@
         </div>
     </div>
     <script>
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROJECT_ID",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_ID",
+            appId: "TU_APP_ID"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         let playerName = "";
         let lives = 3;
         let score = 0;
@@ -92,19 +116,23 @@
 
         function startGame() {
             playerName = document.getElementById("player-name").value;
-            if (!playerName) {
-                Swal.fire('Por favor ingresa tu nombre');
+            let playerAge = document.getElementById("player-age").value;
+            
+            if (!playerName || !playerAge) {
+                Swal.fire('Por favor ingresa tu nombre y edad');
                 return;
             }
+
+            db.collection("players").doc(playerName).set({
+                name: playerName,
+                age: playerAge,
+                score: 0,
+                lives: 3
+            });
+
             document.getElementById("user-input").style.display = "none";
             document.getElementById("game-play").style.display = "block";
             generateQuestion();
-        }
-
-        function generateQuestion() {
-            num1 = Math.floor(Math.random() * 10) + 1;
-            num2 = Math.floor(Math.random() * 10) + 1;
-            document.getElementById("question").innerText = `¿Cuánto es ${num1} x ${num2}?`;
         }
 
         function checkAnswer() {
@@ -115,43 +143,39 @@
                 score++;
                 correctStreak++;
                 document.getElementById("score").innerText = score;
-                let messages = [
-                    `¡Genial, ${playerName}! ¡Sigue así!`,
-                    `¡Eres un genio de las multiplicaciones!`,
-                    `¡Superaste un nuevo reto, increíble!`
-                ];
-                Swal.fire(messages[Math.floor(Math.random() * messages.length)]);
-                
+
+                db.collection("players").doc(playerName).update({
+                    score: score
+                });
+
                 if (correctStreak % 6 === 0) {
                     lives++;
                     document.getElementById("lives").innerText = lives;
-                    Swal.fire({
-                        title: '¡Ganaste una vida!',
-                        text: '¡Sigue practicando!',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
+                    db.collection("players").doc(playerName).update({
+                        lives: lives
                     });
                 }
-                
             } else {
                 lives--;
                 correctStreak = 0;
                 document.getElementById("lives").innerText = lives;
-                Swal.fire('Respuesta incorrecta', 'Intenta de nuevo', 'error');
-            }
-            
-            if (lives > 0) {
-                generateQuestion();
-            } else {
-                Swal.fire({
-                    title: '¡Juego terminado!',
-                    text: `Tu puntuación final fue de ${score}.`,
-                    icon: 'info'
-                }).then(() => {
-                    location.reload();
+
+                db.collection("players").doc(playerName).update({
+                    lives: lives
                 });
+
+                if (lives <= 0) {
+                    document.getElementById("avatar").src = "https://cdn-icons-png.flaticon.com/128/742/742751.png";
+                    Swal.fire({
+                        title: '¡Juego terminado!',
+                        text: 'Nunca te rindas, sigue practicando.',
+                        icon: 'info'
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
             }
+            generateQuestion();
         }
     </script>
 </body>
